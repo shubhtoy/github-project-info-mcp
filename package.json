@@ -1,6 +1,6 @@
 {
   "name": "github-project-info-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server (stdio, npx-installable, zero infrastructure) for reading public GitHub Projects (v2) boards without authentication — official REST API for metadata, undocumented-but-public fallbacks for item-level data (status, fields, story points) where GitHub's official API requires a token. Optional browser client and self-hostable Cloudflare Worker included for non-stdio use cases.",
   "type": "module",
   "main": "dist/index.js",
