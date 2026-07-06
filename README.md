@@ -178,9 +178,15 @@ Publishing to npm is the standard distribution path for MCP servers — once pub
 can run `npx -y github-project-info-mcp` with no clone/build step. To publish a new version:
 
 ```bash
-npm version patch   # or minor/major
+npm version patch   # or minor/major — bumps package.json AND creates a local git tag
+git push --tags
 npm publish
+gh release create v$(node -p "require('./package.json').version") --generate-notes
 ```
+
+`npm version` already creates the git tag; `git push --tags` (or `git push --follow-tags`)
+pushes it, and `gh release create` turns it into a GitHub Release with auto-generated notes
+from commits since the last tag (edit them afterward for a cleaner summary if needed).
 
 The `files` field in `package.json` is already scoped to ship only `dist/`, `README.md`, and
 `LICENSE` — no source, tests, or dev config get published. `prepublishOnly` isn't currently
