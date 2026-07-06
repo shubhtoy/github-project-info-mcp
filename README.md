@@ -129,7 +129,7 @@ solves this with zero setup by default, routing through a free public CORS proxy
 ([AllOrigins](https://allorigins.win)):
 
 ```js
-import { getProjectItemsBrowser, getProjectMetadataBrowser } from 'github-project-info-mcp/dist/browser-client.js'
+import { getProjectItemsBrowser, getProjectMetadataBrowser } from 'github-project-info-mcp/browser'
 
 const metadata = await getProjectMetadataBrowser('users', 'someuser', 4) // no proxy needed — official API already sends CORS headers
 const items = await getProjectItemsBrowser('someuser', 4) // routed through the public proxy by default
@@ -221,7 +221,7 @@ card required) and print your live `*.workers.dev` URL on success. Test locally 
 ## Usage as a library
 
 ```typescript
-import { getProjectMetadata, listProjectItems } from 'github-project-info-mcp/dist/github-projects-client.js'
+import { getProjectMetadata, listProjectItems } from 'github-project-info-mcp/client'
 
 const metadata = await getProjectMetadata('users', 'someuser', 4)
 const { items } = await listProjectItems('users', 'someuser', 4)
