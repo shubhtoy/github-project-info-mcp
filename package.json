@@ -1,7 +1,7 @@
 {
   "name": "github-project-info-mcp",
   "version": "0.1.0",
-  "description": "MCP server + browser client + Cloudflare Worker for reading public GitHub Projects (v2) boards without authentication — official REST API for metadata, undocumented-but-public fallbacks for item-level data (status, fields, story points) where GitHub's official API requires a token.",
+  "description": "MCP server (stdio, npx-installable, zero infrastructure) for reading public GitHub Projects (v2) boards without authentication — official REST API for metadata, undocumented-but-public fallbacks for item-level data (status, fields, story points) where GitHub's official API requires a token. Optional browser client and self-hostable Cloudflare Worker included for non-stdio use cases.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -36,8 +36,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
-    "zod": "3.25.76",
-    "agents": "0.16.2"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@types/node": "22.13.4",
@@ -50,6 +49,7 @@
     "@eslint/js": "9.39.4",
     "typescript-eslint": "8.24.0",
     "wrangler": "4.107.0",
-    "@cloudflare/workers-types": "4.20260101.0"
+    "@cloudflare/workers-types": "4.20260101.0",
+    "agents": "0.16.2"
   }
 }

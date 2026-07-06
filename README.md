@@ -10,8 +10,14 @@ An [MCP](https://modelcontextprotocol.io) server for reading **public GitHub Pro
 boards without authentication** — including item-level data (status, custom fields, story
 points) for boards that GitHub's own official API can't read unauthenticated.
 
-Also ships as an [Agent Skill](./SKILL.md) (see [Skill](#skill) below) and works directly from
-a browser with zero setup (see [Browser usage](#browser-usage-no-server-no-deploy-required)).
+**Runs entirely locally via stdio** (`npx -y github-project-info-mcp`, no server, no
+Cloudflare, no infrastructure of any kind) — this is the primary, standard way to use it. A
+browser client and a self-hostable Cloudflare Worker are also included as **optional extras**
+for the specific case of calling this from client-side JavaScript (see
+[Browser usage](#browser-usage-no-server-no-deploy-required)); neither is needed for normal
+MCP usage and neither is a runtime dependency of the stdio server.
+
+Also ships as an [Agent Skill](./SKILL.md) — see [Skill](#skill) below.
 
 ## Why this exists
 
@@ -185,7 +191,12 @@ There's also an official [MCP Registry](https://modelcontextprotocol.io/registry
 as of writing) for centralized discovery across clients — worth publishing there too once this
 package is stable, via the `mcp-publisher` CLI.
 
-## Deploying your own instance (Cloudflare, free)
+## (Optional) Deploying your own Cloudflare Worker
+
+Not needed for standard MCP usage — this only matters if you want the browser client to skip
+the public proxy dependency (see [Browser usage](#browser-usage-no-server-no-deploy-required)
+above), or want a remote (non-stdio) MCP endpoint. Nothing in this section is required to run
+the server via `npx github-project-info-mcp` or any normal MCP client config.
 
 There's no shared, always-on public instance of the Worker or remote MCP server maintained by
 this repo — the [default browser path](#browser-usage-no-server-no-deploy-required) covers
