@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.shubhtoy/github-project-info",
+  "description": "Read public GitHub Projects v2 boards without auth — items, fields, story points, priority.",
+  "repository": {
+    "url": "https://github.com/shubhtoy/github-project-info-mcp",
+    "source": "github"
+  },
+  "version": "0.1.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "github-project-info-mcp",
+      "version": "0.1.2",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
