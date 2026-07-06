@@ -1,7 +1,10 @@
 # github-project-info-mcp
 
+[![CI](https://github.com/shubhtoy/github-project-info-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/shubhtoy/github-project-info-mcp/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/github-project-info-mcp.svg)](https://www.npmjs.com/package/github-project-info-mcp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Node >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![MCP](https://img.shields.io/badge/MCP-server-purple)](https://modelcontextprotocol.io)
 
 An [MCP](https://modelcontextprotocol.io) server for reading **public GitHub Projects (v2)
 boards without authentication** — including item-level data (status, custom fields, story
@@ -47,7 +50,21 @@ would then be unnecessary for that use case.
 
 ## Installation
 
+**As an MCP server (standard path)**: the conventional way to distribute and run an MCP
+server is via npm + `npx`, so it can be launched with no manual clone/build step:
+
 ```bash
+npx -y github-project-info-mcp
+```
+
+*(Requires the package to be published to npm first — see [Publishing](#publishing-maintainers)
+if you're maintaining a fork.)*
+
+**From source** (for development, or to use the library/Worker/browser-client parts):
+
+```bash
+git clone https://github.com/shubhtoy/github-project-info-mcp.git
+cd github-project-info-mcp
 npm install
 npm run build
 ```
@@ -55,6 +72,19 @@ npm run build
 ## Usage as an MCP server
 
 Add to your MCP client config (Claude Desktop, Kiro, etc.):
+
+```json
+{
+  "mcpServers": {
+    "github-project-info": {
+      "command": "npx",
+      "args": ["-y", "github-project-info-mcp"]
+    }
+  }
+}
+```
+
+Or, running from a local clone instead of the published package:
 
 ```json
 {
@@ -106,14 +136,9 @@ prototyping, demos, or low-traffic pages.
 ### Upgrade path: self-hosted Worker (more reliable, still free)
 
 For anything you need to be reliable, deploy your own instance instead — same free tier, but
-you own it:
-
-```bash
-npx wrangler login     # one-time, opens a browser to authorize
-npm run worker:deploy  # deploys, prints your live URL (*.workers.dev)
-```
-
-Then pass the URL to the browser client instead of using the default proxy:
+you own it. See [Deploying your own instance](#deploying-your-own-instance-cloudflare-free)
+below for the full steps; once deployed, pass the URL to the browser client instead of using
+the default proxy:
 
 ```js
 const items = await getProjectItemsBrowser('someuser', 4, {
@@ -130,10 +155,6 @@ GET /projects/:owner/:number/items?ownerType=user|org
 GET /projects/:owner/:number/fields
 ```
 
-```bash
-npm run worker:dev  # local dev server, for testing before deploy
-```
-
 No secrets or environment variables are needed for either path — every endpoint involved is
 public and unauthenticated by design.
 
@@ -144,6 +165,41 @@ This repo also ships [`SKILL.md`](./SKILL.md), following the
 that support skills can discover when and how to use this MCP server automatically — install
 via [skills.sh](https://skills.sh) (`npx skills add shubhtoy/github-project-info-mcp`) or by
 pointing an agent at this repo directly.
+
+## Publishing (maintainers)
+
+Publishing to npm is the standard distribution path for MCP servers — once published, anyone
+can run `npx -y github-project-info-mcp` with no clone/build step. To publish a new version:
+
+```bash
+npm version patch   # or minor/major
+npm publish
+```
+
+The `files` field in `package.json` is already scoped to ship only `dist/`, `README.md`, and
+`LICENSE` — no source, tests, or dev config get published. `prepublishOnly` isn't currently
+wired to auto-build; run `npm run build` before publishing, or add that hook if you want it
+enforced.
+
+There's also an official [MCP Registry](https://modelcontextprotocol.io/registry) (in preview
+as of writing) for centralized discovery across clients — worth publishing there too once this
+package is stable, via the `mcp-publisher` CLI.
+
+## Deploying your own instance (Cloudflare, free)
+
+There's no shared, always-on public instance of the Worker or remote MCP server maintained by
+this repo — the [default browser path](#browser-usage-no-server-no-deploy-required) covers
+zero-setup usage instead. If you want your own reliable, dedicated deployment:
+
+```bash
+npx wrangler login      # one-time, opens a browser to authorize a free Cloudflare account
+npm run worker:deploy       # deploys the CORS-proxy HTTP API
+npm run mcp-worker:deploy   # deploys the remote MCP server (Streamable HTTP, at /mcp)
+```
+
+Both deploy independently to Cloudflare's free tier (100,000 requests/day each, no credit
+card required) and print your live `*.workers.dev` URL on success. Test locally first with
+`npm run worker:dev` / `npm run mcp-worker:dev` before deploying.
 
 ## Usage as a library
 
