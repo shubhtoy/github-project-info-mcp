@@ -204,9 +204,14 @@ the public proxy dependency (see [Browser usage](#browser-usage-no-server-no-dep
 above), or want a remote (non-stdio) MCP endpoint. Nothing in this section is required to run
 the server via `npx github-project-info-mcp` or any normal MCP client config.
 
-There's no shared, always-on public instance of the Worker or remote MCP server maintained by
-this repo — the [default browser path](#browser-usage-no-server-no-deploy-required) covers
-zero-setup usage instead. If you want your own reliable, dedicated deployment:
+A demo instance is deployed for quick testing (not an SLA'd service — it's a personal
+Cloudflare account's free tier, could go away or hit rate limits with heavy use; deploy your
+own per below for anything you depend on):
+
+- CORS-proxy HTTP API: `https://github-project-info-api.shubhmittal-sm.workers.dev`
+- Remote MCP server: `https://github-project-info-mcp.shubhmittal-sm.workers.dev/mcp`
+
+To deploy your own instead:
 
 ```bash
 npx wrangler login      # one-time, opens a browser to authorize a free Cloudflare account
