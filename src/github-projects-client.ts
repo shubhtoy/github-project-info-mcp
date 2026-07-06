@@ -61,8 +61,9 @@ export interface ListItemsResult {
 }
 
 export class GitHubProjectNotFoundError extends Error {
-  constructor(owner: string, projectNumber: number) {
-    super(`Project ${projectNumber} not found for owner "${owner}", or it is private`)
+  constructor(owner: string, projectNumber: number, cause?: unknown) {
+    const causeMsg = cause instanceof Error ? ` (${cause.message})` : ''
+    super(`Project ${projectNumber} not found for owner "${owner}", or it is private${causeMsg}`)
     this.name = 'GitHubProjectNotFoundError'
   }
 }
@@ -221,14 +222,6 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
     headers: {
       Accept: 'application/vnd.github+json',
       'User-Agent': 'github-project-info-mcp',
-      // Optional: if GITHUB_TOKEN is set in the environment (e.g. CI's automatic token),
-      // authenticate this specific request to raise GitHub's rate limit from 60/hr to
-      // 5000/hr. This ONLY applies to fetchJson, used by the official REST metadata/items
-      // endpoints — never added to the board-scrape or memex fallback functions below, since
-      // proving those work fully unauthenticated is the entire point of this library and
-      // silently authenticating them would mask a real regression if GitHub ever locks them
-      // down. Never required for normal (non-CI) use — everything works unauthenticated.
-      ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
       ...(init?.headers ?? {}),
     },
   })
@@ -251,8 +244,8 @@ export async function getProjectMetadata(
   let raw: any
   try {
     raw = await fetchJson<any>(url)
-  } catch {
-    throw new GitHubProjectNotFoundError(owner, projectNumber)
+  } catch (err) {
+    throw new GitHubProjectNotFoundError(owner, projectNumber, err)
   }
   return {
     id: raw.id,
