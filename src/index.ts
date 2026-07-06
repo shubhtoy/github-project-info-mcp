@@ -55,17 +55,24 @@ server.tool(
 
 server.tool(
   'get_project_item',
-  'Get full field data for a single item in a public GitHub Projects (v2) board. Requires the ' +
-    "project's numeric database ID (from get_project_metadata's `id` field — NOT `nodeId`, " +
-    'which does not work with this endpoint) and the item\'s numeric ID (from ' +
-    'list_project_items). Uses an unofficial, undocumented GitHub endpoint — works today for ' +
-    'public projects but is not a published API contract.',
+  'Get full field data for a single item in a public GitHub Projects (v2) board — including ' +
+    "custom fields (like Priority, Story Points) that list_project_items may not show, since " +
+    "that only returns the board's default-view columns while this returns every field " +
+    "defined on the project. Requires the project's numeric database ID (from " +
+    "get_project_metadata's `id` field — NOT `nodeId`, which does not work with this " +
+    "endpoint) and the item's numeric ID (from list_project_items). Pass owner and " +
+    'projectNumber too so custom field names and single-select option names (e.g. a Status ' +
+    'ID resolved to "Done") can be resolved — omit them to get raw field IDs/option IDs ' +
+    'instead, skipping an extra request. Uses an unofficial, undocumented GitHub endpoint — ' +
+    'works today for public projects but is not a published API contract.',
   {
     projectId: z.number().int().positive().describe('The project\'s numeric database ID, from get_project_metadata\'s `id` field'),
     itemId: z.number().int().positive().describe('The numeric item ID, from list_project_items'),
+    owner: z.string().optional().describe('GitHub username that owns the project, for resolving custom field/option names'),
+    projectNumber: z.number().int().positive().optional().describe('The project number, for resolving custom field/option names'),
   },
-  async ({ projectId, itemId }) => {
-    const item = await getProjectItem(projectId, itemId)
+  async ({ projectId, itemId, owner, projectNumber }) => {
+    const item = await getProjectItem(projectId, itemId, owner, projectNumber)
     return { content: [{ type: 'text', text: JSON.stringify(item, null, 2) }] }
   },
 )

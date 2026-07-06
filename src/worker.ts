@@ -12,6 +12,9 @@
  *   GET /projects/:owner/:number/metadata?ownerType=user|org
  *   GET /projects/:owner/:number/items?ownerType=user|org
  *   GET /projects/:owner/:number/fields
+ *   GET /projects/:owner/:number/items/:projectId/:itemId  (single item, with custom fields —
+ *       see github-projects-client.ts's getProjectItem docstring for why this differs from
+ *       the bulk /items route above)
  *   GET /users/:username/projects
  */
 
@@ -20,6 +23,7 @@ import {
   listProjectItems,
   getProjectFieldsAndViews,
   listUserProjects,
+  getProjectItem,
 } from './github-projects-client.js'
 
 const CORS_HEADERS = {
@@ -71,6 +75,15 @@ export default {
         if (resource === 'fields') {
           return json(await getProjectFieldsAndViews(owner, projectNumber))
         }
+      }
+
+      // /projects/:owner/:number/items/:projectId/:itemId — single item, with custom fields
+      if (parts[0] === 'projects' && parts.length === 6 && parts[3] === 'items') {
+        const [, owner, numberStr, , projectIdStr, itemIdStr] = parts
+        const projectNumber = Number(numberStr)
+        const projectId = Number(projectIdStr)
+        const itemId = Number(itemIdStr)
+        return json(await getProjectItem(projectId, itemId, owner, projectNumber))
       }
 
       return json({ error: 'Not found. See README for valid routes.' }, 404)

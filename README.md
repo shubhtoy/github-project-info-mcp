@@ -47,8 +47,9 @@ This tool reads that instead.
   This fallback is **undocumented and unofficial** — it depends on GitHub's current page markup,
   not a published API contract, and could break without notice if GitHub changes it.
 - **`get_project_item`** — fetches a single item via an internal endpoint GitHub's own web UI
-  uses (`github.com/memexes/{projectNodeId}/items`). Also **undocumented and unofficial**,
-  same caveats as above.
+  uses (`github.com/memexes/{projectId}/items`). Returns **every field on the project**,
+  including custom fields (Priority, Story Points) that the bulk `list_project_items` above
+  can't see. Also **undocumented and unofficial**, same caveats as above.
 
 Use this if you need it and understand the tradeoff. If GitHub ever publishes an official
 unauthenticated items API for user-owned projects, switch to that instead — this project
@@ -108,12 +109,19 @@ Or, running from a local clone instead of the published package:
 - **`get_project_metadata(ownerType, owner, projectNumber)`** — project title, description,
   state, dates.
 - **`list_project_items(ownerType, owner, projectNumber)`** — all items with their fields
-  (status, priority, labels, custom fields, etc). Status/select field values are resolved to
-  human-readable names automatically for user-owned projects.
-- **`get_project_item(projectId, itemId)`** — single item's full field data. Get
-  `projectId` from `get_project_metadata`'s `id` field (the plain numeric database ID — NOT
-  `nodeId`, the GraphQL node ID, which does not work with this endpoint), and `itemId` from
-  `list_project_items`.
+  (status, labels, sub-issue progress, etc — whatever's visible in the board's default view).
+  Status/select field values are resolved to human-readable names automatically for
+  user-owned projects. Custom fields outside the default view (Priority, Story Points, etc)
+  are **not** included here — use `get_project_item` for those.
+- **`get_project_item(projectId, itemId, owner?, projectNumber?)`** — single item's full field
+  data, **including custom fields** (Priority, Story Points, etc) that `list_project_items`
+  doesn't return — confirmed live: the bulk endpoint only reflects the board's active view,
+  while this per-item endpoint returns every field defined on the project. Get `projectId`
+  from `get_project_metadata`'s `id` field (the plain numeric database ID — NOT `nodeId`, the
+  GraphQL node ID, which does not work with this endpoint), and `itemId` from
+  `list_project_items`. Pass `owner`/`projectNumber` too to resolve custom field names and
+  single-select option names (adds one extra request); omit them to get raw field/option IDs
+  instead.
 - **`get_project_fields(owner, projectNumber)`** — field definitions for a user-owned
   project, including single-select option names/colors (e.g. Status: Todo/In Progress/Done)
   and saved views.

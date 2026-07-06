@@ -64,14 +64,18 @@ function buildServer(): McpServer {
 
   server.tool(
     'get_project_item',
-    "Get full field data for a single item, using the project's numeric ID (from " +
-      'get_project_metadata\'s `id` field, not `nodeId`) and item ID.',
+    "Get full field data for a single item, including custom fields (Priority, Story Points, " +
+      "etc) that list_project_items may omit. Uses the project's numeric ID (from " +
+      'get_project_metadata\'s `id` field, not `nodeId`) and item ID. Pass owner/projectNumber ' +
+      'too to resolve custom field and option names.',
     {
       projectId: z.number().int().positive(),
       itemId: z.number().int().positive(),
+      owner: z.string().optional(),
+      projectNumber: z.number().int().positive().optional(),
     },
-    async ({ projectId, itemId }) => {
-      const item = await getProjectItem(projectId, itemId)
+    async ({ projectId, itemId, owner, projectNumber }) => {
+      const item = await getProjectItem(projectId, itemId, owner, projectNumber)
       return { content: [{ type: 'text', text: JSON.stringify(item, null, 2) }] }
     },
   )

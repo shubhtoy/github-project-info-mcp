@@ -36,8 +36,11 @@ tools directly:
 - `list_project_items(ownerType, owner, projectNumber)` — all items with status/fields/points.
 - `get_project_fields(owner, projectNumber)` — field/status option definitions (for resolving
   option IDs to names, and for building filters).
-- `get_project_item(projectId, itemId)` — single item detail. Use the numeric `id` field from
-  `get_project_metadata` (not `nodeId`) as `projectId`.
+- `get_project_item(projectId, itemId, owner?, projectNumber?)` — single item detail,
+  **including custom fields (Priority, Story Points, etc) that `list_project_items` omits** —
+  that one only reflects the board's default view. Use the numeric `id` field from
+  `get_project_metadata` (not `nodeId`) as `projectId`. Pass `owner`/`projectNumber` to get
+  custom field names resolved instead of raw numeric IDs.
 
 If the MCP server isn't connected, install/run it first:
 
@@ -52,10 +55,11 @@ this environment — see the parent repo's README for routes.
 
 1. If you only have a username: call `list_user_projects` to find the project number.
 2. Call `get_project_metadata` for the summary (title, state, last updated).
-3. Call `list_project_items` for the full board contents.
-4. If status/priority values look like opaque IDs instead of names, call `get_project_fields`
-   once and match option `id`s to `name`s — `list_project_items` already does this
-   automatically for user-owned projects, so this step is rarely needed.
+3. Call `list_project_items` for the board's default-view contents (status, labels,
+   sub-issues progress). Status/select values are already resolved to names automatically.
+4. If the user asks about a field not shown by step 3 (Priority, Story Points, or any other
+   custom field), call `get_project_item` for that specific item instead — pass
+   `owner`/`projectNumber` so field names are resolved rather than raw numeric IDs.
 
 ## Caveats to pass along to the user
 

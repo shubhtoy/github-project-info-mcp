@@ -46,4 +46,22 @@ describe('getProjectItem', () => {
     expect(item.title).toBe(targetItem.title)
     expect(item.fields.length).toBeGreaterThan(0)
   })
+
+  it('resolves custom field names (Priority/Area/Story Points) when owner+projectNumber are passed', async () => {
+    // These custom fields exist on this project (confirmed via getProjectFieldsAndViews) but
+    // are NOT part of the board's default view, so listProjectItems' bulk endpoint omits them
+    // entirely — getProjectItem's per-item endpoint includes them, keyed by a numeric
+    // databaseId instead of a name, which is exactly what owner+projectNumber lets us resolve.
+    const metadata = await getProjectMetadata('users', TEST_OWNER, TEST_PROJECT_NUMBER)
+    const { items } = await listProjectItems('users', TEST_OWNER, TEST_PROJECT_NUMBER)
+    const targetItem = items[0]
+
+    const item = await getProjectItem(metadata.id, targetItem.id, TEST_OWNER, TEST_PROJECT_NUMBER)
+    const fieldNames = item.fields.map(f => f.name)
+    expect(fieldNames).toContain('Priority')
+    expect(fieldNames).toContain('Area')
+    expect(fieldNames).toContain('Story Points')
+    // No raw numeric-ID placeholder names should remain once resolution succeeds.
+    expect(fieldNames.some(n => /^field-\d+$/.test(n))).toBe(false)
+  })
 })

@@ -313,7 +313,7 @@ async function listItemsViaBoardScrape(username: string, projectNumber: number):
     )
   }
   const nodes: any[] = parsed.nodes ?? []
-  let items = nodes.map(mapMemexItem)
+  let items = nodes.map((n: any) => mapMemexItem(n))
 
   const columnsRaw = extractEmbeddedJson(html, 'memex-columns-data')
   if (columnsRaw) {
@@ -339,16 +339,20 @@ async function listItemsViaBoardScrape(username: string, projectNumber: number):
   return { items, totalCount, hasMore, source: 'board-scrape' }
 }
 
-function mapMemexItem(node: any): ProjectItem {
+function mapMemexItem(node: any, fieldNamesByDatabaseId?: Map<number, string>): ProjectItem {
   const cols: any[] = node.memexProjectColumnValues ?? []
   const titleCol = cols.find(c => c.memexProjectColumnId === 'Title')
-  const fields: ProjectFieldValue[] = cols
-    .filter(c => typeof c.memexProjectColumnId === 'string')
-    .map(c => ({
-      name: c.memexProjectColumnId,
-      dataType: typeof c.value,
-      value: c.value,
-    }))
+  const fields: ProjectFieldValue[] = cols.map(c => {
+    // Custom fields (Priority, Area, Story Points, etc) are keyed by a numeric databaseId
+    // instead of a string name in the per-item detail endpoint's response — resolve to the
+    // real field name when we have field definitions available (see getProjectItem), or
+    // fall back to a "field-<id>" placeholder name rather than silently dropping the value.
+    const isNumericId = typeof c.memexProjectColumnId === 'number'
+    const name = isNumericId
+      ? fieldNamesByDatabaseId?.get(c.memexProjectColumnId) ?? `field-${c.memexProjectColumnId}`
+      : c.memexProjectColumnId
+    return { name, dataType: typeof c.value, value: c.value }
+  })
   return {
     id: node.id,
     contentId: node.contentId,
@@ -382,16 +386,30 @@ export async function listProjectItems(
 }
 
 /**
- * Fetch a single item's full field data via GitHub's undocumented per-item endpoint.
+ * Fetch a single item's full field data via GitHub's undocumented per-item endpoint. Unlike
+ * the bulk list endpoint (listProjectItems), this one DOES include custom fields (Priority,
+ * Area, Story Points, etc) that aren't part of the board's default view — confirmed live:
+ * the bulk endpoint only returns fields visible in the active view, while this per-item
+ * endpoint returns every field defined on the project, keyed by numeric databaseId for
+ * custom fields instead of a string name.
+ *
  * Works for public projects of either owner type, unauthenticated. Requires the project's
  * plain numeric database ID (from `getProjectMetadata().id` — NOT `.nodeId`, which is the
- * GraphQL node ID and does not work with this endpoint, confirmed by testing both) and the
- * item's numeric ID (from `listProjectItems()`).
+ * GraphQL node ID and does not work with this endpoint, confirmed by testing both), the
+ * item's numeric ID (from `listProjectItems()`), and the owner/projectNumber so field names
+ * and single-select option names can be resolved (an extra request to getProjectFieldsAndViews
+ * — pass `fields` yourself if you already have them from a prior call, to skip re-fetching).
  *
  * UNOFFICIAL / UNDOCUMENTED: this is an internal endpoint used by GitHub's own web UI,
  * not a published API. It may change or be removed without notice.
  */
-export async function getProjectItem(projectId: number, itemId: number): Promise<ProjectItem> {
+export async function getProjectItem(
+  projectId: number,
+  itemId: number,
+  owner?: string,
+  projectNumber?: number,
+  fields?: ProjectField[],
+): Promise<ProjectItem> {
   const url = `${GITHUB_WEB}/memexes/${projectId}/items?memexProjectItemId=${itemId}`
   const res = await fetch(url, {
     headers: {
@@ -403,10 +421,21 @@ export async function getProjectItem(projectId: number, itemId: number): Promise
   if (!res.ok) {
     throw new Error(`Failed to fetch project item ${itemId}: ${res.status} ${res.statusText}`)
   }
-  const raw = await res.json() as any
-  const item = raw.memexProjectItem
-  if (!item) {
+  const raw = (await res.json()) as any
+  const rawItem = raw.memexProjectItem
+  if (!rawItem) {
     throw new Error(`Unexpected response shape for project item ${itemId}`)
   }
-  return mapMemexItem(item)
+
+  let resolvedFields = fields
+  if (!resolvedFields && owner && projectNumber) {
+    try {
+      resolvedFields = (await getProjectFieldsAndViews(owner, projectNumber)).fields
+    } catch {
+      resolvedFields = undefined // field-name/option resolution is best-effort, not fatal
+    }
+  }
+  const nameByDatabaseId = resolvedFields ? new Map(resolvedFields.map(f => [f.databaseId, f.name])) : undefined
+  const item = mapMemexItem(rawItem, nameByDatabaseId)
+  return resolvedFields ? resolveFieldOptionNames([item], resolvedFields)[0] : item
 }
