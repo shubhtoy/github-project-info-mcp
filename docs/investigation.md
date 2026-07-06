@@ -61,3 +61,19 @@ because GitHub changed the board page's markup or retired the internal endpoint 
 updated `id` attribute on the embedded script tag, or watch for GitHub publishing an official
 unauthenticated items API for user-owned projects (which would make this whole library
 unnecessary for that case).
+
+## CI flakiness from unauthenticated rate limits
+
+The test suite calls the real, live GitHub APIs (see the top of
+`tests/github-projects-client.test.ts` for why — mocking would hide exactly the kind of
+breakage this library needs to catch). GitHub Actions runners share IP ranges across many
+concurrent jobs, and GitHub's unauthenticated rate limit (60 requests/hour **per IP**, not per
+repo or per workflow) can get exhausted by unrelated traffic on that shared IP, causing tests
+to fail with a false "not found" even though the project is genuinely public and reachable.
+
+Fix: `fetchJson` (used only by the official REST metadata endpoint, never by the unauthenticated
+fallback functions) optionally sends `Authorization: Bearer $GITHUB_TOKEN` if that env var is
+set. CI sets it from GitHub Actions' automatic `secrets.GITHUB_TOKEN`, raising the limit to
+5000/hour. This is CI-only plumbing — normal usage (via `npx`, in an MCP client, from a
+browser) never needs a token and stays genuinely unauthenticated, which is the entire point of
+this library.
